@@ -5,29 +5,33 @@
 
 // -------- ESTRUCTURAS Y FUNCIONES --------
 
+// Enumeración para representar la prioridad de los tickets
 typedef enum { BAJO, MEDIO, ALTO } Prioridad;
 
+// Estructura que define un ticket en la lista enlazada
 typedef struct Ticket {
-    int id;
-    char descripcion[256];
-    Prioridad prioridad;
-    time_t hora_registro;
-    struct Ticket* siguiente;
+    int id;                         // ID único del ticket
+    char descripcion[256];          // Descripción del problema
+    Prioridad prioridad;            // Prioridad del ticket
+    time_t hora_registro;           // Hora en que se registró el ticket
+    struct Ticket* siguiente;       // Puntero al siguiente ticket en la lista
 } Ticket;
 
-Ticket* lista = NULL;
+Ticket* lista = NULL; // Lista enlazada que almacena los tickets pendientes
 
+// Función para registrar un nuevo ticket en la lista
 void registrar_ticket(int id, const char* descripcion){
     Ticket* nuevo = (Ticket*)malloc(sizeof(Ticket));
     nuevo->id = id;
     strcpy(nuevo->descripcion, descripcion);
-    nuevo->prioridad = BAJO;
-    nuevo->hora_registro = time(NULL);
+    nuevo->prioridad = BAJO; // Prioridad inicial por defecto
+    nuevo->hora_registro = time(NULL); // Tiempo actual
     nuevo->siguiente = NULL;
 
+    // Agregar al final de la lista
     if(lista == NULL){
         lista = nuevo;
-    }else{
+    } else {
         Ticket* actual = lista;
         while(actual->siguiente) actual = actual->siguiente;
         actual->siguiente = nuevo;
@@ -35,6 +39,7 @@ void registrar_ticket(int id, const char* descripcion){
     printf("Ticket registrado con ID %d.\n", id);
 }
 
+// Función para asignar una nueva prioridad a un ticket específico
 void asignar_prioridad(int id, Prioridad nueva_prioridad){
     Ticket* actual = lista;
     while(actual){
@@ -48,6 +53,7 @@ void asignar_prioridad(int id, Prioridad nueva_prioridad){
     printf("Ticket con ID %d no encontrado.\n", id);
 }
 
+// Función para mostrar todos los tickets pendientes ordenados por prioridad (ALTO -> BAJO)
 void mostrar_tickets(){
     if(lista == NULL){
         printf("No hay tickets pendientes.\n");
@@ -55,7 +61,7 @@ void mostrar_tickets(){
     }
 
     const char* nombres_prioridad[] = { "BAJO", "MEDIO", "ALTO" };
-    Prioridad niveles[] = { ALTO, MEDIO, BAJO }; 
+    Prioridad niveles[] = { ALTO, MEDIO, BAJO }; // Orden inverso para mostrar primero los más urgentes
 
     printf("\n*****Tickets pendientes*****\n");
     for (int i = 0; i < 3; i++) {
@@ -75,13 +81,18 @@ void mostrar_tickets(){
     }
 }
 
+// Función para procesar el ticket más urgente (mayor prioridad y más antiguo)
 void procesar_ticket(){
     if(!lista){
         printf("No hay tickets pendientes.\n");
         return;
     }
-    Ticket* anterior = NULL, *actual = lista, *mejor = NULL, *mejor_ant = NULL;
-    for(; actual; anterior = actual, actual= actual->siguiente){
+
+    Ticket *anterior = NULL, *actual = lista;
+    Ticket *mejor = NULL, *mejor_ant = NULL;
+
+    // Buscar el ticket con mayor prioridad (y si hay empate, el más antiguo)
+    for(; actual; anterior = actual, actual = actual->siguiente){
         if(!mejor || actual->prioridad > mejor->prioridad ||
            (actual->prioridad == mejor->prioridad &&
             actual->hora_registro < mejor->hora_registro)){
@@ -90,19 +101,23 @@ void procesar_ticket(){
         }
     }
 
+    // Eliminar el ticket de la lista
     if(mejor_ant){
         mejor_ant->siguiente = mejor->siguiente;
-    }else{
+    } else {
         lista = mejor->siguiente;
     }
 
+    // Mostrar la información del ticket procesado
     char* hora = ctime(&mejor->hora_registro);
-    hora[strlen(hora) - 1] = '\0';
+    hora[strlen(hora) - 1] = '\0'; // Quitar salto de línea
     printf("Procesando ticket ID %d\nDescripcion: %s\nPrioridad: %d\nFecha y Hora: %s\n",
            mejor->id, mejor->descripcion, mejor->prioridad, hora);
-    free(mejor);
+
+    free(mejor); // Liberar memoria del ticket procesado
 }
 
+// Función para buscar un ticket por ID e imprimir su información
 void buscar_ticket(int id){
     Ticket* actual = lista;
     while(actual){
@@ -124,6 +139,7 @@ int main(){
     int opcion;
 
     do{
+        // Menú de opciones para el usuario
         printf("\n*****SISTEMA DE TICKETS*****\n");
         printf("1. Registrar Ticket\n");
         printf("2. Asignar Prioridad al ticket\n");
@@ -132,8 +148,9 @@ int main(){
         printf("5. Buscar ticket por ID\n");
         printf("0. Exit\n");
         scanf("%d", &opcion);
-        getchar();
+        getchar(); // Limpiar buffer
 
+        // Lógica de opciones del menú
         if(opcion == 1){
             int id;
             char descripcion[256];
@@ -142,9 +159,9 @@ int main(){
             getchar();
             printf("Ingrese descripcion del problema: ");
             fgets(descripcion, sizeof(descripcion), stdin);
-            descripcion[strcspn(descripcion, "\n")] = 0;
+            descripcion[strcspn(descripcion, "\n")] = 0; // Eliminar salto de línea
             registrar_ticket(id, descripcion);
-        }else if(opcion == 2){
+        } else if(opcion == 2){
             int id, prioridad;
             printf("Ingrese ID del ticket: ");
             scanf("%d", &id);
@@ -152,23 +169,25 @@ int main(){
             scanf("%d", &prioridad);
             if(prioridad >= 0 && prioridad <= 2){
                 asignar_prioridad(id, (Prioridad)prioridad);
-            }else{
+            } else {
                 printf("Prioridad Invalida.\n");
             }
-        }else if(opcion == 3){
+        } else if(opcion == 3){
             mostrar_tickets();
-        }else if(opcion == 4){
+        } else if(opcion == 4){
             procesar_ticket();
-        }else if(opcion == 5){
+        } else if(opcion == 5){
             int id;
             printf("Ingrese ID del ticket a buscar: ");
             scanf("%d", &id);
             buscar_ticket(id);
-        }else if(opcion == 0){
+        } else if(opcion == 0){
             printf("Saliendo del sistema...\n");
-        }else{
+        } else {
             printf("Opcion no valida.\n");
         }
-    }while(opcion != 0);
+
+    } while(opcion != 0);
+
     return 0;
 }
